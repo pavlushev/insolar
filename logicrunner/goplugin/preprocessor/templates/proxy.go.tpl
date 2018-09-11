@@ -11,35 +11,35 @@ import (
 {{ end }}
 
 // Reference to class of this contract
-var ClassReference = "{{ .ClassReference }}"
+var ClassReference = foundation.Reference("{{ .ClassReference }}")
 
 // Contract proxy type
 type {{ .ContractType }} struct {
-    Reference string
+    Reference foundation.Reference
 }
 
 type ContractHolder struct {
 	data []byte
 }
 
-func (r *ContractHolder) AsChild(objRef string) *{{ .ContractType }} {
-    ref, err := proxyctx.Current.SaveAsChild(objRef, ClassReference, r.data)
+func (r *ContractHolder) AsChild(objRef foundation.Reference) *{{ .ContractType }} {
+    ref, err := proxyctx.Current.SaveAsChild(string(objRef), string(ClassReference), r.data)
     if err != nil {
         panic(err)
     }
-    return &{{ .ContractType }}{Reference: ref}
+    return &{{ .ContractType }}{Reference: foundation.Reference(ref)}
 }
 
-func (r *ContractHolder) AsDelegate(objRef string) *{{ .ContractType }} {
-    ref, err := proxyctx.Current.SaveAsDelegate(objRef, ClassReference, r.data)
+func (r *ContractHolder) AsDelegate(objRef foundation.Reference) *{{ .ContractType }} {
+    ref, err := proxyctx.Current.SaveAsDelegate(string(objRef), string(ClassReference), r.data)
     if err != nil {
         panic(err)
     }
-    return &{{ .ContractType }}{Reference: ref}
+    return &{{ .ContractType }}{Reference: foundation.Reference(ref)}
 }
 
 // GetObject
-func GetObject(ref string) (r *{{ .ContractType }}) {
+func GetObject(ref foundation.Reference) (r *{{ .ContractType }}) {
     return &{{ .ContractType }}{Reference: ref}
 }
 
@@ -53,7 +53,7 @@ func {{ $func.Name }}( {{ $func.Arguments }} ) *ContractHolder {
         panic(err)
     }
 
-    data, err := proxyctx.Current.RouteConstructorCall(ClassReference, "{{ $func.Name }}", argsSerialized)
+    data, err := proxyctx.Current.RouteConstructorCall(string(ClassReference), "{{ $func.Name }}", argsSerialized)
     if err != nil {
 		panic(err)
     }
@@ -63,14 +63,12 @@ func {{ $func.Name }}( {{ $func.Arguments }} ) *ContractHolder {
 {{ end }}
 
 // GetReference
-// TODO replace return to Reference
-func (r *{{ $.ContractType }}) GetReference() string {
+func (r *{{ $.ContractType }}) GetReference() foundation.Reference {
     return r.Reference
 }
 
 // GetClass
-// TODO replace return to Reference
-func (r *{{ $.ContractType }}) GetClass() string {
+func (r *{{ $.ContractType }}) GetClass() foundation.Reference {
     return ClassReference
 }
 
@@ -84,7 +82,7 @@ func (r *{{ $.ContractType }}) {{ $method.Name }}( {{ $method.Arguments }} ) ( {
         panic(err)
     }
 
-    res, err := proxyctx.Current.RouteCall(r.Reference, "{{ $method.Name }}", argsSerialized)
+    res, err := proxyctx.Current.RouteCall(string(r.Reference), "{{ $method.Name }}", argsSerialized)
     if err != nil {
    		panic(err)
     }
