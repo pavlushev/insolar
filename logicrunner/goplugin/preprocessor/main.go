@@ -429,6 +429,7 @@ func generateMethodsProxies(parsed *parsedFile) ([]map[string]interface{}, map[s
 
 	imports := make(map[string]bool)
 	imports[fmt.Sprintf(`"%s"`, proxyctxPath)] = true
+	imports[fmt.Sprintf(`"%s"`, clientFoundation)] = true
 	for _, method := range parsed.methods[parsed.contract] {
 		methodsProxies = append(methodsProxies, generateMethodProxyInfo(parsed, method))
 		extendImportsMap(parsed, method.Type.Params, imports)
