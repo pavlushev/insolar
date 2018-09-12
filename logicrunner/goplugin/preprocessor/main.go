@@ -200,9 +200,11 @@ func GenerateContractProxy(fileName string, classReference string, out io.Writer
 
 	types := generateTypes(parsed)
 
-	methodsProxies, imports := generateMethodsProxies(parsed)
+	methodsProxies := generateMethodsProxies(parsed)
 
 	constructorProxies := generateConstructorProxies(parsed)
+
+	imports := generateImports(parsed)
 
 	tmpl, err := openTemplate("templates/proxy.go.tpl")
 	if err != nil {
@@ -425,18 +427,25 @@ func generateMethodProxyInfo(parsed *parsedFile, method *ast.FuncDecl) map[strin
 	}
 }
 
-func generateMethodsProxies(parsed *parsedFile) ([]map[string]interface{}, map[string]bool) {
+func generateMethodsProxies(parsed *parsedFile) []map[string]interface{} {
 	var methodsProxies []map[string]interface{}
 
+	for _, method := range parsed.methods[parsed.contract] {
+		methodsProxies = append(methodsProxies, generateMethodProxyInfo(parsed, method))
+	}
+
+	return methodsProxies
+}
+
+func generateImports(parsed *parsedFile) map[string]bool {
 	imports := make(map[string]bool)
 	imports[fmt.Sprintf(`"%s"`, proxyctxPath)] = true
 	imports[fmt.Sprintf(`"%s"`, corePath)] = true
 	for _, method := range parsed.methods[parsed.contract] {
-		methodsProxies = append(methodsProxies, generateMethodProxyInfo(parsed, method))
 		extendImportsMap(parsed, method.Type.Params, imports)
 		extendImportsMap(parsed, method.Type.Results, imports)
 	}
-	return methodsProxies, imports
+	return imports
 }
 
 func generateConstructorProxies(parsed *parsedFile) []map[string]string {
