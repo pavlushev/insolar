@@ -416,3 +416,92 @@ func (r *Two) Hello(s string) string {
 	}
 	assert.Equal(t, "Hi, ins! Two said: Hello you too, ins. 644 times!", resParsed[0])
 }
+
+func TestRootDomainContract(t *testing.T) {
+	var rootDomainCode = `
+package main
+
+import (
+	"fmt"
+
+	"github.com/insolar/insolar/logicrunner/goplugin/foundation"
+    //"contract-proxy/member"
+)
+
+type RootDomain struct {
+	foundation.BaseContract
+}
+
+func New() *RootDomain {
+	return &RootDomain{};
+}
+
+func (rd *RootDomain) CreateMember(s string) string {
+	//memberHolder := member.New(s)
+	return "r"
+}
+	`
+
+	lr, err := NewLogicRunner(configuration.LogicRunner{})
+	assert.NoError(t, err)
+
+	mr := &testMessageRouter{LogicRunner: lr}
+	am := testutil.NewTestArtifactManager()
+	lr.ArtifactManager = am
+
+	insiderStorage, err := ioutil.TempDir("", "test-")
+	assert.NoError(t, err)
+	defer os.RemoveAll(insiderStorage) // nolint: errcheck
+
+	gp, err := goplugin.NewGoPlugin(
+		&configuration.GoPlugin{
+			MainListen:     "127.0.0.1:7778",
+			RunnerListen:   "127.0.0.1:7777",
+			RunnerPath:     "./goplugin/ginsider-cli/ginsider-cli",
+			RunnerCodePath: insiderStorage,
+		},
+		mr,
+		am,
+	)
+	assert.NoError(t, err)
+	defer gp.Stop()
+
+	err = lr.RegisterExecutor(core.MachineTypeGoPlugin, gp)
+	assert.NoError(t, err)
+
+	ch := new(codec.CborHandle)
+	var data []byte
+	err = codec.NewEncoderBytes(&data, ch).Encode(
+		&struct{}{},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var argsSerialized []byte
+	err = codec.NewEncoderBytes(&argsSerialized, ch).Encode(
+		[]interface{}{"ins"},
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	file, err := os.OpenFile("../genesis/experiment/member/member.go", os.O_RDONLY, 0)
+	if err != nil {
+		panic(errors.Wrap(err, "Can't open member contract"))
+	}
+	defer file.Close() //nolint: errcheck
+
+	res, err := ioutil.ReadAll(file)
+	if err != nil {
+		panic(errors.Wrap(err, "Can't read member contract"))
+	}
+
+	cb := testutil.NewContractBuilder(am, icc)
+	err = cb.Build(map[string]string{"member": string(res), "root": rootDomainCode})
+
+	_, res, err = gp.CallMethod(*cb.Codes["root"], data, "CreateMember", argsSerialized)
+	if err != nil {
+		panic(err)
+	}
+}
