@@ -326,7 +326,7 @@ func generateTypes(parsed *parsedFile) []string {
 }
 
 func extendImportsMap(parsed *parsedFile, params *ast.FieldList, imports map[string]bool) {
-	if params == nil {
+	if params == nil || params.NumFields() == 0 {
 		return
 	}
 
@@ -335,29 +335,29 @@ func extendImportsMap(parsed *parsedFile, params *ast.FieldList, imports map[str
 		tname = strings.Trim(tname, "*")
 		tnameFrom := strings.Split(tname, ".")
 
-		if len(tnameFrom) > 1 {
+		if len(tnameFrom) < 2 {
+			continue
+		}
+
+		for _, imp := range parsed.node.Imports {
 			var importAlias string
 			var impValue string
 
-			for _, imp := range parsed.node.Imports {
-				if imp.Name != nil {
-					importAlias = imp.Name.Name
-					impValue = fmt.Sprintf(`%s %s`, importAlias, imp.Path.Value)
-				} else {
-					impValue = imp.Path.Value
-					importString := strings.Trim(impValue, `"`)
-					importAlias = filepath.Base(importString)
-				}
-				if importAlias == tnameFrom[0] {
-					imports[impValue] = true
-					break
-				}
+			if imp.Name != nil {
+				importAlias = imp.Name.Name
+				impValue = fmt.Sprintf(`%s %s`, importAlias, imp.Path.Value)
+			} else {
+				impValue = imp.Path.Value
+				importString := strings.Trim(impValue, `"`)
+				importAlias = filepath.Base(importString)
 			}
 
+			if importAlias == tnameFrom[0] {
+				imports[impValue] = true
+				break
+			}
 		}
-
 	}
-
 }
 
 func generateZeroListOfTypes(parsed *parsedFile, name string, list *ast.FieldList) (string, string) {
