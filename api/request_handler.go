@@ -252,3 +252,44 @@ func (rh *RequestHandler) ProcessDumpUsers(all bool) (map[string]interface{}, er
 
 	return result, nil
 }
+
+func extractRegisterNodeResponse(data []byte) (string, error) {
+	var typeHolder string
+	dataUnmarsh, err := UnMarshalResponse(data, []interface{}{typeHolder})
+	if err != nil {
+		return "", errors.Wrap(err, "[ extractSimpleResponse ]")
+	}
+
+	reference, ok := dataUnmarsh[0].(string)
+	if !ok {
+		msg := fmt.Sprintf("Can't cast response to bool. orig: %T", dataUnmarsh)
+		return "", errors.New(msg)
+	}
+
+	return reference, nil
+}
+
+func (rh *RequestHandler) RegisterNode() (map[string]interface{}, error) {
+	if len(rh.params.PublicKey) == 0 {
+		return nil, errors.New("field 'public_key' is required")
+	}
+	if len(rh.params.RoleType) == 0 {
+		return nil, errors.New("field 'role_type' is required")
+	}
+
+	routResult, err := rh.sendRequest("RegisterNode", []interface{}{rh.params.PublicKey, rh.params.RoleType})
+	if err != nil {
+		return nil, errors.Wrap(err, "[ RegisterNode ]")
+	}
+
+	reference, err := extractRegisterNodeResponse(routResult.(*reaction.CommonReaction).Result)
+	if err != nil {
+		return nil, errors.Wrap(err, "[ RegisterNode ]")
+	}
+
+	result := make(map[string]interface{})
+
+	result["reference"] = reference
+
+	return result, nil
+}
