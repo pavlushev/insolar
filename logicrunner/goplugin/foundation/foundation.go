@@ -105,3 +105,15 @@ type CBORMarshaler interface {
 func Call(Reference core.RecordRef, MethodName string, Arguments []interface{}) ([]interface{}, error) {
 	return nil, nil
 }
+
+type contractError struct {
+	err string
+}
+
+func (e *contractError) Error() string {
+	return e.err
+}
+
+func Error(error string) *contractError {
+	return &contractError{err: error}
+}
