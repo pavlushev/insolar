@@ -55,6 +55,7 @@ func (h *MessageHandler) Link(components core.Components) error {
 	bus.MustRegister(message.TypeDeactivateObject, h.handleDeactivateObject)
 	bus.MustRegister(message.TypeUpdateObject, h.handleUpdateObject)
 	bus.MustRegister(message.TypeRegisterChild, h.handleRegisterChild)
+	bus.MustRegister(message.TypeJetDrop, h.handleJetDrop)
 
 	return nil
 }
@@ -641,6 +642,15 @@ func (h *MessageHandler) handleRegisterChild(genericMsg core.Message) (core.Repl
 	}
 
 	return &reply.ID{ID: *child.CoreID()}, nil
+}
+
+func (h *MessageHandler) handleJetDrop(genericMsg core.Message) (core.Reply, error) {
+	msg := genericMsg.(*message.JetDrop)
+
+	// TODO: validate !!!!!!!!!!
+	_ = msg
+
+	return &reply.ID{}, nil
 }
 
 func getReference(request *core.RecordRef, id *record.ID) *core.RecordRef {

@@ -64,6 +64,8 @@ const (
 	TypeUpdateObject
 	// TypeRegisterChild registers child on the parent object.
 	TypeRegisterChild
+	// TypeJetDrop carries jet drop to validators
+	TypeJetDrop
 )
 
 // GetEmptyMessage constructs specified message
@@ -103,6 +105,8 @@ func getEmptyMessage(mt core.MessageType) (core.Message, error) {
 		return &UpdateObject{}, nil
 	case TypeRegisterChild:
 		return &RegisterChild{}, nil
+	case TypeJetDrop:
+		return &JetDrop{}, nil
 	default:
 		return nil, errors.Errorf("unimplemented message type %d", mt)
 	}
@@ -157,4 +161,5 @@ func init() {
 	gob.Register(&DeactivateObject{})
 	gob.Register(&UpdateObject{})
 	gob.Register(&RegisterChild{})
+	gob.Register(&JetDrop{})
 }
